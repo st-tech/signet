@@ -18,16 +18,16 @@ module Signet #:nodoc:
   def self.parse_auth_param_list(auth_param_string)
     # Production rules from:
     # http://tools.ietf.org/html/draft-ietf-httpbis-p1-messaging-12
-    token = /[-!#$\%&'*+.^_`|~0-9a-zA-Z]+/
+    token = /[-!#$\%&'*+.^_`|~0-9a-zA-Z]+/n
     d_qdtext = /[\s\x21\x23-\x5B\x5D-\x7E\x80-\xFF]/n
     d_quoted_pair = /\\[\s\x21-\x7E\x80-\xFF]/n
-    d_qs = /"(?:#{d_qdtext}|#{d_quoted_pair})*"/
+    d_qs = /"(?:#{d_qdtext}|#{d_quoted_pair})*"/n
     # Production rules that allow for more liberal parsing, i.e. single quotes
     s_qdtext = /[\s\x21-\x26\x28-\x5B\x5D-\x7E\x80-\xFF]/n
     s_quoted_pair = /\\[\s\x21-\x7E\x80-\xFF]/n
-    s_qs = /'(?:#{s_qdtext}|#{s_quoted_pair})*'/
+    s_qs = /'(?:#{s_qdtext}|#{s_quoted_pair})*'/n
     # Combine the above production rules to find valid auth-param pairs.
-    auth_param = /((?:#{token})\s*=\s*(?:#{d_qs}|#{s_qs}|#{token}))/
+    auth_param = /((?:#{token})\s*=\s*(?:#{d_qs}|#{s_qs}|#{token}))/n
     auth_param_pairs = []
     position = 0
     last_match = nil
@@ -38,7 +38,7 @@ module Signet #:nodoc:
     # This would be way easier in Ruby 1.9, but we want backwards
     # compatibility.
     while (match = remainder.match(auth_param))
-      if match.pre_match && match.pre_match !~ /^[\s,]*$/
+      if match.pre_match && match.pre_match !~ /^[\s,]*$/n
         raise ParseError,
           "Unexpected auth param format: '#{auth_param_string}'."
       end
@@ -46,18 +46,18 @@ module Signet #:nodoc:
       remainder = match.post_match
       last_match = match
     end
-    if last_match.post_match && last_match.post_match !~ /^[\s,]*$/
+    if last_match.post_match && last_match.post_match !~ /^[\s,]*$/n
       raise ParseError,
         "Unexpected auth param format: '#{auth_param_string}'."
     end
     # Now parse the auth-param pair strings & turn them into key-value pairs.
     return (auth_param_pairs.inject([]) do |accu, pair|
       name, value = pair.split('=', 2)
-      if value =~ /^".*"$/
+      if value =~ /^".*"$/n
         value = value.gsub(/^"(.*)"$/, '\1').gsub(/\\(.)/, '\1')
-      elsif value =~ /^'.*'$/
+      elsif value =~ /^'.*'$/n
         value = value.gsub(/^'(.*)'$/, '\1').gsub(/\\(.)/, '\1')
-      elsif value =~ /[\(\)<>@,;:\\\"\/\[\]?={}]/
+      elsif value =~ /[\(\)<>@,;:\\\"\/\[\]?={}]/n
         # Certain special characters are not allowed
         raise ParseError, (
           "Unexpected characters in auth param " +
